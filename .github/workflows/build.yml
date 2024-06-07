@@ -1,0 +1,32 @@
+name: build
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: build
+      run: |-
+        docker build --platform linux/amd64 . -t davidsiaw/dockerdns
+    - name: dockerlogin
+      uses: docker/login-action@v3
+      with:
+        username: davidsiaw
+        password: ${{ secrets.DOCKER_PAT }}
+    - name: push branch
+      if: github.ref != 'refs/heads/master'
+      run: |-
+        TAG=`git rev-parse --abbrev-ref HEAD`
+        docker tag davidsiaw/dockerdns:latest davidsiaw/dockerdns:$TAG
+        docker push davidsiaw/dockerdns:$TAG
+    - name: push master
+      if: github.ref == 'refs/heads/master'
+      run: |-
+        TAG=`date +%Y%m%d%H%M%S`
+        docker tag davidsiaw/dockerdns:latest davidsiaw/dockerdns:$TAG
+
+        docker push davidsiaw/dockerdns:latest
+        docker push davidsiaw/dockerdns:$TAG
+'on':
+  push:
+    branches:
+    - '*'
